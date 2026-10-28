@@ -15,7 +15,9 @@ const newAnswer = document.querySelector("#new-answer");
 const editDialog = document.querySelector("#edit-dialog");
 const editQuestion = document.querySelector("#edit-question");
 const editAnswer = document.querySelector("#edit-answer");
-// TODO: grab references to any necessary elements you added to index.html (search, counter, prev/next buttons)
+const previousButton = document.querySelector("#prev-button");
+const nextButton = document.querySelector("#next-button");
+const counter = document.querySelector("#counter");
 
 
 // ---------- Errors ----------
@@ -85,15 +87,18 @@ function showPage() {
 function renderPreviews() {
   previewList.innerHTML = "";
   questions.forEach(function (question, index) {
-    const preview = document.createElement("div");
+    const preview = document.createElement("button");
+    preview.type = "button";
     preview.className = "preview";
     if (index === currentIndex) {
       preview.classList.add("active");
+      preview.setAttribute("aria-current", "true");
     }
     preview.textContent = question.q;
     preview.addEventListener("click", function () {
       currentIndex = index;
       showPage();
+      previewList.children[index].focus();
     });
     previewList.append(preview);
   });
@@ -102,6 +107,9 @@ function renderPreviews() {
 // Create a card to represent current question/answer (stored at questions[currentIndex])
 function showCard() {
   cardArea.innerHTML = "";
+  counter.textContent = questions.length ? "Card " + (currentIndex + 1) + " of " + questions.length : "Card 0 of 0";
+  previousButton.disabled = questions.length < 2;
+  nextButton.disabled = questions.length < 2;
   if (questions.length === 0) {
     cardArea.textContent = "No questions to show.";
     return;
@@ -123,37 +131,53 @@ function showCard() {
     openEditDialog(question);
   });
 
-  const questionText = document.createElement("p");
+  const questionText = document.createElement("h2");
   questionText.className = "question";
   questionText.textContent = question.q;
 
   const answerText = document.createElement("p");
   answerText.className = "answer hidden";
+  answerText.id = "card-answer";
   answerText.textContent = question.a;
 
-  questionText.addEventListener("click", function () {
+  const revealButton = document.createElement("button");
+  revealButton.type = "button";
+  revealButton.className = "reveal-button";
+  revealButton.textContent = "Show answer";
+  revealButton.setAttribute("aria-expanded", "false");
+  revealButton.setAttribute("aria-controls", "card-answer");
+  revealButton.addEventListener("click", function () {
     answerText.classList.toggle("hidden");
+    const expanded = !answerText.classList.contains("hidden");
+    revealButton.setAttribute("aria-expanded", String(expanded));
+    revealButton.textContent = expanded ? "Hide answer" : "Show answer";
   });
 
-  card.append(deleteButton, editButton, questionText, answerText);
+  const cardActions = document.createElement("div");
+  cardActions.className = "card-actions";
+  deleteButton.className = "delete-button";
+  cardActions.append(editButton, deleteButton);
+  card.append(questionText, revealButton, answerText, cardActions);
   cardArea.append(card);
 }
 
 
-// ---------- Navigation and search ----------
+// ---------- Navigation ----------
 
-// TODO: Previous / Next. Write functions that change currentIndex to the appropriate value
-// (wrapping around at both ends) and then call showPage(). Then write event listeners to attach these
-// functions to the appropriate Previous/Next buttons. 
+function moveCard(direction) {
+  if (questions.length === 0) return;
+  currentIndex = (currentIndex + direction + questions.length) % questions.length;
+  showPage();
+}
 
-// TODO: Update the progress text ("Card 3 of 3") in the counter whenever the card changes.
+previousButton.addEventListener("click", function () { moveCard(-1); });
+nextButton.addEventListener("click", function () { moveCard(1); });
 
 
 // ---------- Actions ----------
 
 async function deleteQuestion(question) {
-  await apiSend("DELETE", "/delete/" + question.id);
-  renderPage();
+  if (await apiSend("DELETE", "/delete/" + question.id)) renderPage();
 }
 
 function openEditDialog(question) {

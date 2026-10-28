@@ -10,7 +10,7 @@
         <div id="layout">
             <!-- Left-hand navbar: script.js adds one preview per question -->
             <nav id="sidebar">
-                <h1>Questions</h1>
+                <h2>Questions</h2>
                 <div id="preview-list"></div>
             </nav>
 
@@ -20,7 +20,11 @@
                 <p id="error-message" class="hidden" role="alert"></p>
                 <div id="card-area"></div>
 
-                <!-- TODO: add Previous and Next buttons (ids "prev-button", "next-button") and a counter element (id="counter") -->
+                <div id="card-navigation" aria-label="Card navigation">
+                    <button id="prev-button" type="button">Previous</button>
+                    <span id="counter" role="status">Card 0 of 0</span>
+                    <button id="next-button" type="button">Next</button>
+                </div>
 
                 <form id="add-form">
                     <h2>Add a question</h2>
