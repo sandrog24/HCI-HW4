@@ -168,19 +168,33 @@ document.querySelector("#close-dialog").addEventListener("click", function () {
 });
 
 document.querySelector("#update-button").addEventListener("click", async function () {
-  editDialog.close();
-  await apiSend("PUT", "/update/" + editingId, {
-    question: editQuestion.value,
-    answer: editAnswer.value
+  if (!editQuestion.value.trim() || !editAnswer.value.trim()) {
+    editQuestion.setCustomValidity(editQuestion.value.trim() ? "" : "Enter a question.");
+    editAnswer.setCustomValidity(editAnswer.value.trim() ? "" : "Enter an answer.");
+    if (!editQuestion.reportValidity()) return;
+    editAnswer.reportValidity();
+    return;
+  }
+  const updated = await apiSend("PUT", "/update/" + editingId, {
+    question: editQuestion.value.trim(),
+    answer: editAnswer.value.trim()
   });
+  if (!updated) return;
+  editDialog.close();
   renderPage();
 });
 
-document.querySelector("#add-button").addEventListener("click", async function () {
-  await apiSend("POST", "/add", {
-    question: newQuestion.value,
-    answer: newAnswer.value
+[editQuestion, editAnswer].forEach(function (input) {
+  input.addEventListener("input", function () { input.setCustomValidity(""); });
+});
+
+document.querySelector("#add-form").addEventListener("submit", async function (event) {
+  event.preventDefault();
+  const added = await apiSend("POST", "/add", {
+    question: newQuestion.value.trim(),
+    answer: newAnswer.value.trim()
   });
+  if (!added) return;
   newQuestion.value = "";
   newAnswer.value = "";
   currentIndex = questions.length;
