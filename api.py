@@ -2,7 +2,7 @@ import uvicorn
  
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 app = FastAPI(title="HCI Mini Review App API")
 
@@ -27,12 +27,30 @@ questions = [{
                 "id": 2,
                 "q": "What is the main goal of the ideation phase of iterative design?",
                 "a": "Generating as many possible design solutions as possible"
+                },
+             {
+                "id": 3,
+                "q": "How does the Gestalt principle of proximity help organize an interface?",
+                "a": "Elements placed close together are perceived as a group, so related controls and content should be near each other."
+                },
+             {
+                "id": 4,
+                "q": "What is a signifier in interface design?",
+                "a": "A perceivable cue that communicates where or how an interaction can happen, such as a labeled button or a hover state."
                 }
             ]
 
 class QuestionRequest(BaseModel):
     question: str
     answer: str
+
+    @field_validator("question", "answer")
+    @classmethod
+    def require_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Questions and answers must contain text.")
+        return value
 
 @app.get("/questions")
 def get_questions():
@@ -41,7 +59,7 @@ def get_questions():
 @app.post("/add")
 def add_question(req: QuestionRequest):
     questions.append({
-        "id": len(questions),
+        "id": max((question["id"] for question in questions), default=-1) + 1,
         "q": req.question,
         "a": req.answer
     })
